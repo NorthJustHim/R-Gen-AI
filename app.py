@@ -4,7 +4,7 @@ import google.generativeai as genai
 import stripe
 
 # Configure your API keys
-genai.configure(api_key=st.secrets["AIzaSyB1kHYm_pPeam1v9hAyhJcexIgZraEj5Ek"])
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 stripe.api_key = st.secrets["pk_test_51RxbHpRIrSebCqVdcPOEd8ric0lez0EPZSU1kk3QKjCddHuEEyCqoSXLU5MbPkP2qbTp3CkzZkgjUBipyN3xNFGC00rSYjwt63"]
 
 model = genai.GenerativeModel("gemini-1.5-flash")
@@ -83,6 +83,7 @@ if prompt := st.chat_input("Type your message..."):
     # Show AI response
     placeholder.markdown(bot_message)
     st.session_state.messages.append({"role": "assistant", "content": bot_message})
+
 
 
 
