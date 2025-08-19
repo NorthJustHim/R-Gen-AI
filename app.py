@@ -6,7 +6,7 @@ import stripe
 # -------------------------------
 # Configure Stripe
 # -------------------------------
-stripe.api_key = "pk_test_51RxbHpRIrSebCqVdcPOEd8ric0lez0EPZSU1kk3QKjCddHuEEyCqoSXLU5MbPkP2qbTp3CkzZkgjUBipyN3xNFGC00rSYjwt63"  # Replace with your Stripe secret key
+stripe.api_key = "sk_test_51RxbHpRIrSebCqVdttX2rHUr75ZF0pyTBDGe02RyYZrkoyIXjJnnPVeY3vGgvaBNGVLWhEegLlXmQOoFrf7raiM2007bsr4MLy"  # Replace with your Stripe secret key
 
 # Initialize access flag
 if "paid" not in st.session_state:
@@ -103,6 +103,7 @@ else:
         # Replace dots with AI response
         placeholder.markdown(bot_message)
         st.session_state.messages.append({"role": "assistant", "content": bot_message})
+
 
 
 
