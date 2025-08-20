@@ -1,76 +1,80 @@
 import streamlit as st
-import time
+import pyrebase
 import google.generativeai as genai
+import time
+
+# -------------------------------
+# Firebase Config
+# -------------------------------
+firebaseConfig = {
+    "apiKey": "AIzaSyBiENvYyHrDW7zNnAH1Jcqdp3wt6Unx8",
+    "authDomain": "r-genai-316c0.firebaseapp.com",
+    "projectId": "r-genai-316c0",
+    "storageBucket": "r-genai-316c0.firebasestorage.app",
+    "messagingSenderId": "846690140948",
+    "appId": "1:846690140948:web:66883562aacbb1ea0a7801",
+    "databaseURL": ""
+}
+
+firebase = pyrebase.initialize_app(firebaseConfig)
+auth = firebase.auth()
 
 # -------------------------------
 # Configure Gemini AI
 # -------------------------------
-genai.configure(api_key="AIzaSyB1kHYm_pPeam1v9hAyhJcexIgZraEj5Ek")  # replace with your key
+genai.configure(api_key="YOUR_GEMINI_API_KEY")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # -------------------------------
-# Fake user database (demo only)
+# Session State
 # -------------------------------
-users_db = {
-    "test@example.com": "1234"  # demo account
-}
-
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+if "user" not in st.session_state:
+    st.session_state.user = None
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # -------------------------------
-# Streamlit page config
+# Streamlit UI
 # -------------------------------
 st.set_page_config(page_title="✨ R-Gen AI", page_icon="⚡", layout="wide")
-
-st.markdown(
-    """
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1 style="margin: 0;">✨ R-Gen AI</h1>
-        <img src="https://img.icons8.com/fluency/48/rocket.png" width="40">
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-st.write("Your AI sidekick for hustles 🚀")
+st.title("✨ R-Gen AI 🚀")
+st.write("Your AI sidekick for hustles.")
 
 # -------------------------------
 # Auth Section
 # -------------------------------
-if not st.session_state.logged_in:
-    st.subheader("Sign Up or Log In")
+if not st.session_state.user:
+    choice = st.radio("Login or Sign Up", ["Login", "Sign Up"])
 
-    option = st.radio("Choose:", ["Login", "Sign Up"])
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
 
-    if option == "Sign Up":
-        if st.button("Sign Up"):
-            if email in users_db:
-                st.error("⚠️ Email already registered.")
-            else:
-                users_db[email] = password
+    if choice == "Sign Up":
+        if st.button("Create Account"):
+            try:
+                user = auth.create_user_with_email_and_password(email, password)
                 st.success("✅ Account created! Please log in.")
+            except Exception as e:
+                st.error(f"❌ {e}")
 
-    elif option == "Login":
+    elif choice == "Login":
         if st.button("Login"):
-            if email in users_db and users_db[email] == password:
-                st.session_state.logged_in = True
+            try:
+                user = auth.sign_in_with_email_and_password(email, password)
+                st.session_state.user = user
                 st.success("✅ Logged in successfully!")
                 st.experimental_rerun()
-            else:
-                st.error("❌ Invalid email or password.")
+            except Exception as e:
+                st.error(f"❌ {e}")
 
 # -------------------------------
 # Chatbot Section
 # -------------------------------
 else:
-    st.subheader("Chat with R-Gen AI 🤖")
+    st.subheader(f"Welcome, {st.session_state.user['email']} 👋")
 
-    # Display past messages
+    # Show past messages
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
@@ -80,31 +84,22 @@ else:
         st.session_state.messages.append({"role": "user", "content": prompt})
         st.chat_message("user").markdown(prompt)
 
-        # Wavy dots animation
+        # Loading animation
         placeholder = st.empty()
-        wave = ["·    ", " ·   ", "  ·  ", "   · ", "  ·  ", " ·   "]
-        for i in range(12):
-            placeholder.markdown(f"**{wave[i % len(wave)]}**")
-            time.sleep(0.2)
-
-        # Build AI prompt
-        conversation_text = (
-            "You are R-Gen AI, a helpful assistant. "
-            "Correct spelling/grammar if needed and answer clearly. "
-            "Do NOT repeat the user’s question.\n\n"
-            f"User: {prompt}"
-        )
+        for i in range(6):
+            placeholder.markdown("⏳ Thinking" + "." * (i % 4))
+            time.sleep(0.3)
 
         # AI response
+        conversation_text = f"You are R-Gen AI, a helpful assistant.\nUser: {prompt}"
         response = model.generate_content(conversation_text)
         bot_message = response.text
 
-        # Replace dots with AI response
         placeholder.markdown(bot_message)
         st.session_state.messages.append({"role": "assistant", "content": bot_message})
 
     if st.button("Logout"):
-        st.session_state.logged_in = False
+        st.session_state.user = None
         st.experimental_rerun()
 
 
