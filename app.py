@@ -1,5 +1,5 @@
 import streamlit as st
-import pyrebase
+import pyrebase4 as pyrebase
 import google.generativeai as genai
 import time
 
@@ -101,6 +101,7 @@ else:
     if st.button("Logout"):
         st.session_state.user = None
         st.experimental_rerun()
+
 
 
 
