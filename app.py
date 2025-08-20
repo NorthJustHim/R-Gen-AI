@@ -1,29 +1,31 @@
 import streamlit as st
 import time
 import google.generativeai as genai
-import stripe
-
-# -------------------------------
-# Configure Stripe
-# -------------------------------
-stripe.api_key = "sk_test_51RxbHpRIrSebCqVdttX2rHUr75ZF0pyTBDGe02RyYZrkoyIXjJnnPVeY3vGgvaBNGVLWhEegLlXmQOoFrf7raiM2007bsr4MLy"  # Replace with your Stripe secret key
-
-# Initialize access flag
-if "paid" not in st.session_state:
-    st.session_state.paid = False
 
 # -------------------------------
 # Configure Gemini AI
 # -------------------------------
-genai.configure(api_key="AIzaSyB1kHYm_pPeam1v9hAyhJcexIgZraEj5Ek")  # Replace with your Gemini API key
+genai.configure(api_key="AIzaSyB1kHYm_pPeam1v9hAyhJcexIgZraEj5Ek")  # replace with your key
 model = genai.GenerativeModel("gemini-1.5-flash")
+
+# -------------------------------
+# Fake user database (demo only)
+# -------------------------------
+users_db = {
+    "test@example.com": "1234"  # demo account
+}
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 # -------------------------------
 # Streamlit page config
 # -------------------------------
 st.set_page_config(page_title="✨ R-Gen AI", page_icon="⚡", layout="wide")
 
-# Header with PNG icon
 st.markdown(
     """
     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -33,43 +35,40 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
 st.write("Your AI sidekick for hustles 🚀")
 
 # -------------------------------
-# Payment Section
+# Auth Section
 # -------------------------------
-if not st.session_state.paid:
-    st.write("Click below to pay $5 to unlock the chatbot:")
+if not st.session_state.logged_in:
+    st.subheader("Sign Up or Log In")
 
-    if st.button("Pay $5"):
-        try:
-            session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
-                line_items=[{
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {'name': 'R-Gen AI Access'},
-                        'unit_amount': 500,  # $5 in cents
-                    },
-                    'quantity': 1,
-                }],
-                mode='payment',
-                success_url='https://revalutiongeneration-ai.streamlit.app/',  # Replace with your Streamlit app URL
-                cancel_url='https://revalutiongeneration-ai.streamlit.app/',
-            )
-            st.markdown(f"[Click here to pay]({session.url})", unsafe_allow_html=True)
-        except Exception as e:
-            st.error(f"Error creating checkout session: {e}")
+    option = st.radio("Choose:", ["Login", "Sign Up"])
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+
+    if option == "Sign Up":
+        if st.button("Sign Up"):
+            if email in users_db:
+                st.error("⚠️ Email already registered.")
+            else:
+                users_db[email] = password
+                st.success("✅ Account created! Please log in.")
+
+    elif option == "Login":
+        if st.button("Login"):
+            if email in users_db and users_db[email] == password:
+                st.session_state.logged_in = True
+                st.success("✅ Logged in successfully!")
+                st.experimental_rerun()
+            else:
+                st.error("❌ Invalid email or password.")
 
 # -------------------------------
 # Chatbot Section
 # -------------------------------
 else:
-    st.write("✅ Access granted! You can now chat with R-Gen AI.")
-
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+    st.subheader("Chat with R-Gen AI 🤖")
 
     # Display past messages
     for msg in st.session_state.messages:
@@ -104,7 +103,9 @@ else:
         placeholder.markdown(bot_message)
         st.session_state.messages.append({"role": "assistant", "content": bot_message})
 
-
+    if st.button("Logout"):
+        st.session_state.logged_in = False
+        st.experimental_rerun()
 
 
 
