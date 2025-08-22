@@ -5,7 +5,7 @@ import google.generativeai as genai
 # -------------------------------
 # Configure Gemini AI
 # -------------------------------
-genai.configure(api_key="YOUR_GEMINI_API_KEY")  # replace with your key
+genai.configure(api_key="AIzaSyBrIzyi5AGaQZ5CXVBQPVjZmiM7hCjoZpc")  # replace with your key
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # -------------------------------
@@ -106,6 +106,7 @@ else:
     if st.button("Logout"):
         st.session_state.logged_in = False
         st.experimental_rerun()
+
 
 
 
