@@ -12,108 +12,80 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 # -------------------------------
 # Fake user database (demo only)
 # -------------------------------
-users_db = {
-    "test@example.com": "1234"  # demo account
-}
+users_db = {"test@example.com": "1234"}  # demo account
 
+# -------------------------------
+# Session State
+# -------------------------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Track when user first visited (trial start date)
-if "trial_start" not in st.session_state:
-    st.session_state.trial_start = datetime.date.today()
+if "first_visit" not in st.session_state:
+    st.session_state.first_visit = datetime.datetime.now()
 
 # -------------------------------
 # Streamlit page config
 # -------------------------------
 st.set_page_config(page_title="✨ R-Gen AI", page_icon="⚡", layout="wide")
 
-# Title
-st.markdown(
-    """
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1 style="margin: 0;">✨ R-Gen AI</h1>
-        <img src="https://img.icons8.com/fluency/48/rocket.png" width="40">
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+# Title and logo
+col1, col2 = st.columns([6, 2])
+with col1:
+    st.markdown("<h1>✨ R-Gen AI 🚀</h1>", unsafe_allow_html=True)
+with col2:
+    st.image("https://img.icons8.com/fluency/48/rocket.png", width=40)
+
 st.write("Your AI sidekick for hustles 🚀")
 
 # -------------------------------
 # Auth Section (top right corner)
 # -------------------------------
-with st.container():
-    st.markdown(
-        """
-        <style>
-            .auth-box {
-                position: absolute;
-                top: 20px;
-                right: 30px;
-                background: #f9f9f9;
-                padding: 15px;
-                border-radius: 12px;
-                box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
-                width: 260px;
-            }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+colA, colB = st.columns([6, 2])
+with colB:
+    if not st.session_state.logged_in:
+        st.markdown("### 🔐 Sign Up / Log In")
+        option = st.radio("Choose:", ["Login", "Sign Up"], key="auth_radio")
+        email = st.text_input("Email", key="auth_email")
+        password = st.text_input("Password", type="password", key="auth_password")
 
-    with st.container():
-        st.markdown('<div class="auth-box">', unsafe_allow_html=True)
+        if option == "Sign Up":
+            if st.button("Sign Up", key="signup_btn"):
+                if email in users_db:
+                    st.error("⚠️ Email already registered.")
+                else:
+                    users_db[email] = password
+                    st.success("✅ Account created! Please log in.")
 
-        if not st.session_state.logged_in:
-            st.markdown("### 🔑 Login / Sign Up")
-            option = st.radio("Choose:", ["Login", "Sign Up"])
-            email = st.text_input("Email", key="auth_email")
-            password = st.text_input("Password", type="password", key="auth_pass")
+        elif option == "Login":
+            if st.button("Login", key="login_btn"):
+                if email in users_db and users_db[email] == password:
+                    st.session_state.logged_in = True
+                    st.success("✅ Logged in successfully!")
+                    st.experimental_rerun()
+                else:
+                    st.error("❌ Invalid email or password.")
 
-            if option == "Sign Up":
-                if st.button("Sign Up"):
-                    if email in users_db:
-                        st.error("⚠️ Email already registered.")
-                    else:
-                        users_db[email] = password
-                        st.success("✅ Account created! Please log in.")
-
-            elif option == "Login":
-                if st.button("Login"):
-                    if email in users_db and users_db[email] == password:
-                        st.session_state.logged_in = True
-                        st.success("✅ Logged in successfully!")
-                        st.experimental_rerun()
-                    else:
-                        st.error("❌ Invalid email or password.")
-
-        else:
-            st.markdown("✅ Logged in")
-            if st.button("Logout"):
-                st.session_state.logged_in = False
-                st.experimental_rerun()
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# -------------------------------
-# Trial check
-# -------------------------------
-trial_days = (datetime.date.today() - st.session_state.trial_start).days
-trial_limit = 4
-trial_over = (trial_days >= trial_limit) and not st.session_state.logged_in
+    else:
+        st.success("✅ Logged in!")
+        if st.button("Logout", key="logout_btn"):
+            st.session_state.logged_in = False
+            st.experimental_rerun()
 
 # -------------------------------
 # Chatbot Section
 # -------------------------------
-st.subheader("Chat with R-Gen AI 🤖")
+# Check free trial (4 days)
+days_passed = (datetime.datetime.now() - st.session_state.first_visit).days
+trial_expired = days_passed >= 4 and not st.session_state.logged_in
 
-if trial_over:
-    st.warning("⚠️ Your 4-day free trial has ended. Please log in or sign up to continue.")
+if trial_expired:
+    st.warning("⚠️ Free trial expired! Please log in or sign up to continue.")
 else:
+    st.subheader("Chat with R-Gen AI 🤖")
+
     # Display past messages
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
@@ -146,7 +118,6 @@ else:
         # Replace dots with AI response
         placeholder.markdown(bot_message)
         st.session_state.messages.append({"role": "assistant", "content": bot_message})
-
 
 
 
