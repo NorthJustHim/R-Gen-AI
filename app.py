@@ -22,7 +22,7 @@ auth = firebase.auth()
 # -------------------------------
 # Configure Gemini AI
 # -------------------------------
-genai.configure(api_key="YOUR_GEMINI_API_KEY")
+genai.configure(api_key="AIzaSyBrIzyi5AGaQZ5CXVBQPVjZmiM7hCjoZpc")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # -------------------------------
@@ -101,6 +101,7 @@ else:
     if st.button("Logout"):
         st.session_state.user = None
         st.experimental_rerun()
+
 
 
 
