@@ -1,4 +1,5 @@
 streamlit
+pyrebase4
+requests
+google-auth
 google-generativeai
-stripe
-pyrebase4 @ git+https://github.com/nhorvath/Pyrebase4.git
