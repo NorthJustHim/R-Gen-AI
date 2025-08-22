@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import google.generativeai as genai
+import datetime
 
 # -------------------------------
 # Configure Gemini AI
@@ -21,11 +22,16 @@ if "logged_in" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Track when user first visited (trial start date)
+if "trial_start" not in st.session_state:
+    st.session_state.trial_start = datetime.date.today()
+
 # -------------------------------
 # Streamlit page config
 # -------------------------------
 st.set_page_config(page_title="✨ R-Gen AI", page_icon="⚡", layout="wide")
 
+# Title
 st.markdown(
     """
     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -38,38 +44,76 @@ st.markdown(
 st.write("Your AI sidekick for hustles 🚀")
 
 # -------------------------------
-# Auth Section
+# Auth Section (top right corner)
 # -------------------------------
-if not st.session_state.logged_in:
-    st.subheader("Sign Up or Log In")
+with st.container():
+    st.markdown(
+        """
+        <style>
+            .auth-box {
+                position: absolute;
+                top: 20px;
+                right: 30px;
+                background: #f9f9f9;
+                padding: 15px;
+                border-radius: 12px;
+                box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+                width: 260px;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
-    option = st.radio("Choose:", ["Login", "Sign Up"])
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
+    with st.container():
+        st.markdown('<div class="auth-box">', unsafe_allow_html=True)
 
-    if option == "Sign Up":
-        if st.button("Sign Up"):
-            if email in users_db:
-                st.error("⚠️ Email already registered.")
-            else:
-                users_db[email] = password
-                st.success("✅ Account created! Please log in.")
+        if not st.session_state.logged_in:
+            st.markdown("### 🔑 Login / Sign Up")
+            option = st.radio("Choose:", ["Login", "Sign Up"])
+            email = st.text_input("Email", key="auth_email")
+            password = st.text_input("Password", type="password", key="auth_pass")
 
-    elif option == "Login":
-        if st.button("Login"):
-            if email in users_db and users_db[email] == password:
-                st.session_state.logged_in = True
-                st.success("✅ Logged in successfully!")
+            if option == "Sign Up":
+                if st.button("Sign Up"):
+                    if email in users_db:
+                        st.error("⚠️ Email already registered.")
+                    else:
+                        users_db[email] = password
+                        st.success("✅ Account created! Please log in.")
+
+            elif option == "Login":
+                if st.button("Login"):
+                    if email in users_db and users_db[email] == password:
+                        st.session_state.logged_in = True
+                        st.success("✅ Logged in successfully!")
+                        st.experimental_rerun()
+                    else:
+                        st.error("❌ Invalid email or password.")
+
+        else:
+            st.markdown("✅ Logged in")
+            if st.button("Logout"):
+                st.session_state.logged_in = False
                 st.experimental_rerun()
-            else:
-                st.error("❌ Invalid email or password.")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# -------------------------------
+# Trial check
+# -------------------------------
+trial_days = (datetime.date.today() - st.session_state.trial_start).days
+trial_limit = 4
+trial_over = (trial_days >= trial_limit) and not st.session_state.logged_in
 
 # -------------------------------
 # Chatbot Section
 # -------------------------------
-else:
-    st.subheader("Chat with R-Gen AI 🤖")
+st.subheader("Chat with R-Gen AI 🤖")
 
+if trial_over:
+    st.warning("⚠️ Your 4-day free trial has ended. Please log in or sign up to continue.")
+else:
     # Display past messages
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
@@ -103,9 +147,7 @@ else:
         placeholder.markdown(bot_message)
         st.session_state.messages.append({"role": "assistant", "content": bot_message})
 
-    if st.button("Logout"):
-        st.session_state.logged_in = False
-        st.experimental_rerun()
+
 
 
 
