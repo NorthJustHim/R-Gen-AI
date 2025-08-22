@@ -1,4 +1,4 @@
 streamlit
 google-generativeai
 stripe
-pyrebase4
+pyrebase4 @ git+https://github.com/nhorvath/Pyrebase4.git
