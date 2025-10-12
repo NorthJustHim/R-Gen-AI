@@ -6,7 +6,7 @@ import datetime
 # -------------------------------
 # Configure Gemini AI (replace with your key)
 # -------------------------------
-genai.configure(api_key="AIzaSyBrIzyi5AGaQZ5CXVBQPVjZmiM7hCjoZpc")
+genai.configure(api_key="AIzaSyDO1ZV6ep36DlC6FYk_uMrigYuWzjNG9hM")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # -------------------------------
@@ -199,6 +199,7 @@ if st.session_state.logged_in:
     if st.button("Logout", key="logout_small"):
         st.session_state.logged_in = False
         st.experimental_rerun()
+
 
 
 
