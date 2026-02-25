@@ -2,20 +2,34 @@ import streamlit as st
 import time
 import google.generativeai as genai
 import datetime
+import json
+import os
 
 # -------------------------------
-# Configure Gemini AI (replace with your key)
+# Configure Gemini AI
 # -------------------------------
 genai.configure(api_key="AIzaSyDO1ZV6ep36DlC6FYk_uMrigYuWzjNG9hM")
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 # -------------------------------
-# In-memory user DB (demo)
+# JSON "database" setup
 # -------------------------------
-users_db = {"test@example.com": "1234"}
+DB_FILE = "users.json"
+
+# Load users from file
+if os.path.exists(DB_FILE):
+    with open(DB_FILE, "r") as f:
+        users_db = json.load(f)
+else:
+    users_db = {"test@example.com": "1234"}
+
+# Helper to save users
+def save_users():
+    with open(DB_FILE, "w") as f:
+        json.dump(users_db, f)
 
 # -------------------------------
-# Session state & trial
+# Session state
 # -------------------------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -32,14 +46,13 @@ if "show_login" not in st.session_state:
 # Page config + header
 # -------------------------------
 st.set_page_config(page_title="✨ R-Gen AI", page_icon="⚡", layout="wide")
-
 col1, col2 = st.columns([8, 1])
 with col1:
     st.markdown("<h1 style='margin:0'>✨ R-Gen AI 🚀</h1>", unsafe_allow_html=True)
     st.write("Your AI sidekick for hustles 🚀")
 
 # -------------------------------
-# CSS for top-right segmented control
+# CSS for top-right buttons
 # -------------------------------
 st.markdown("""
 <style>
@@ -53,7 +66,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------
-# Floating buttons
+# Floating Signup/Login buttons
 # -------------------------------
 st.markdown('<div class="auth-top-right"><div class="auth-top-right-wrapper">', unsafe_allow_html=True)
 c1, c2 = st.columns([1,1], gap="small")
@@ -68,7 +81,7 @@ with c2:
 st.markdown('</div></div>', unsafe_allow_html=True)
 
 # -------------------------------
-# Signup/Login forms (persistent)
+# Signup form
 # -------------------------------
 if st.session_state.show_signup:
     st.info("Create an account")
@@ -83,8 +96,12 @@ if st.session_state.show_signup:
             st.error("Email already registered. Try logging in.")
         else:
             users_db[signup_email] = signup_pass
+            save_users()
             st.success("Account created — you can now log in.")
 
+# -------------------------------
+# Login form
+# -------------------------------
 if st.session_state.show_login:
     st.info("Log in to R-Gen AI")
     login_email = st.text_input("Email for login", key="login_email")
@@ -94,7 +111,7 @@ if st.session_state.show_login:
             st.session_state.logged_in = True
             st.session_state.show_login = False
             st.session_state.show_signup = False
-            st.success("Logged in! 🎉")
+            st.success(f"Logged in! 🎉 Welcome, {login_email}")
             st.experimental_rerun()
         else:
             st.error("Invalid credentials.")
@@ -116,7 +133,6 @@ else:
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
-
     if prompt := st.chat_input("Type your message..."):
         st.session_state.messages.append({"role":"user","content":prompt})
         st.chat_message("user").markdown(prompt)
@@ -141,7 +157,7 @@ else:
         st.session_state.messages.append({"role":"assistant","content":bot_message})
 
 # -------------------------------
-# Optional small logout button
+# Logout
 # -------------------------------
 if st.session_state.logged_in:
     if st.button("Logout", key="logout_small"):
