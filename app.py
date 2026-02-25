@@ -16,14 +16,12 @@ model = genai.GenerativeModel("gemini-2.5-flash")
 # -------------------------------
 DB_FILE = "users.json"
 
-# Load users from file
 if os.path.exists(DB_FILE):
     with open(DB_FILE, "r") as f:
         users_db = json.load(f)
 else:
     users_db = {"test@example.com": "1234"}
 
-# Helper to save users
 def save_users():
     with open(DB_FILE, "w") as f:
         json.dump(users_db, f)
@@ -41,34 +39,33 @@ if "show_signup" not in st.session_state:
     st.session_state.show_signup = False
 if "show_login" not in st.session_state:
     st.session_state.show_login = False
+if "chat_sessions" not in st.session_state:
+    st.session_state.chat_sessions = [{"name": "Default Chat", "messages": []}]
+if "active_chat" not in st.session_state:
+    st.session_state.active_chat = 0  # index of current chat
 
 # -------------------------------
 # Page config + header
 # -------------------------------
 st.set_page_config(page_title="✨ R-Gen AI", page_icon="⚡", layout="wide")
-col1, col2 = st.columns([8, 1])
-with col1:
-    st.markdown("<h1 style='margin:0'>✨ R-Gen AI 🚀</h1>", unsafe_allow_html=True)
-    st.write("Your AI sidekick for hustles 🚀")
 
 # -------------------------------
-# CSS for top-right buttons
+# Left sidebar for chat sessions
 # -------------------------------
-st.markdown("""
-<style>
-.auth-top-right {position: fixed; top: 18px; right: 24px; z-index: 9999; background: transparent; padding: 0;}
-.auth-top-right .stButton > button {border-radius: 8px; padding: 8px 18px; font-weight: 600; border: 1px solid #cfcfcf; margin: 0; min-width: 110px; height: 38px; box-shadow: none;}
-.auth-top-right .stButton:first-child > button {background: #ffffff; color: #333333; border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;}
-.auth-top-right .stButton:last-child > button {background: #1f6feb; color: #fff; border-left: none; border-top-left-radius: 0; border-bottom-left-radius: 0;}
-.auth-top-right .stButton > button:hover {opacity: 0.92;}
-.auth-top-right-wrapper {border-radius: 10px; padding: 4px; background: rgba(255,255,255,0.9); box-shadow: 0 6px 18px rgba(0,0,0,0.06); display: inline-block;}
-</style>
-""", unsafe_allow_html=True)
+with st.sidebar:
+    st.markdown("<h2>Your Chats</h2>", unsafe_allow_html=True)
+    for i, chat in enumerate(st.session_state.chat_sessions):
+        if st.button(chat["name"], key=f"chat_{i}"):
+            st.session_state.active_chat = i
+    st.markdown("---")
+    if st.button("➕ New Chat", key="new_chat"):
+        st.session_state.chat_sessions.append({"name": f"Chat {len(st.session_state.chat_sessions)+1}", "messages": []})
+        st.session_state.active_chat = len(st.session_state.chat_sessions) - 1
 
 # -------------------------------
 # Floating Signup/Login buttons
 # -------------------------------
-st.markdown('<div class="auth-top-right"><div class="auth-top-right-wrapper">', unsafe_allow_html=True)
+st.markdown('<div style="position: fixed; top: 18px; right: 24px; z-index: 9999;">', unsafe_allow_html=True)
 c1, c2 = st.columns([1,1], gap="small")
 with c1:
     if st.button("Signup", key="seg_signup"):
@@ -78,10 +75,10 @@ with c2:
     if st.button("Login", key="seg_login"):
         st.session_state.show_signup = False
         st.session_state.show_login = True
-st.markdown('</div></div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------
-# Signup form
+# Signup/Login forms
 # -------------------------------
 if st.session_state.show_signup:
     st.info("Create an account")
@@ -99,9 +96,6 @@ if st.session_state.show_signup:
             save_users()
             st.success("Account created — you can now log in.")
 
-# -------------------------------
-# Login form
-# -------------------------------
 if st.session_state.show_login:
     st.info("Log in to R-Gen AI")
     login_email = st.text_input("Email for login", key="login_email")
@@ -117,31 +111,33 @@ if st.session_state.show_login:
             st.error("Invalid credentials.")
 
 # -------------------------------
-# Trial and chat area
+# Active chat display
 # -------------------------------
-days_passed = (datetime.datetime.now() - st.session_state.first_visit).days
-trial_limit = 4
-trial_over = (days_passed >= trial_limit) and not st.session_state.logged_in
+if st.session_state.logged_in or not st.session_state.logged_in:
+    active_chat = st.session_state.chat_sessions[st.session_state.active_chat]
+    st.markdown(f"### {active_chat['name']}")
 
-if not st.session_state.logged_in:
-    days_left = max(0, trial_limit - days_passed)
-    st.markdown(f"**Free trial:** {days_left} day(s) left. After that, please Sign Up or Login to continue.")
-
-if trial_over:
-    st.warning("⚠️ Your 4-day free trial expired. Please Sign Up or Login to continue.")
-else:
-    for msg in st.session_state.messages:
+    # show messages
+    for msg in active_chat["messages"]:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
+
+    # chat input
     if prompt := st.chat_input("Type your message..."):
-        st.session_state.messages.append({"role":"user","content":prompt})
+        active_chat["messages"].append({"role": "user", "content": prompt})
         st.chat_message("user").markdown(prompt)
+
+        # animated 3-dot wave
         placeholder = st.empty()
-        wave_frames = ["<span style='font-size:26px'>● ○ ○</span>","<span style='font-size:26px'>○ ● ○</span>","<span style='font-size:26px'>○ ○ ●</span>"]
+        wave_frames = ["<span style='font-size:26px'>● ○ ○</span>",
+                       "<span style='font-size:26px'>○ ● ○</span>",
+                       "<span style='font-size:26px'>○ ○ ●</span>"]
         for _ in range(8):
             for frame in wave_frames:
                 placeholder.markdown(frame, unsafe_allow_html=True)
                 time.sleep(0.18)
+
+        # AI response
         conversation_text = (
             "You are R-Gen AI, a helpful assistant. "
             "Correct spelling/grammar if needed and answer clearly. "
@@ -154,7 +150,7 @@ else:
         except Exception:
             bot_message = "Sorry — an error happened while contacting the AI."
         placeholder.markdown(bot_message)
-        st.session_state.messages.append({"role":"assistant","content":bot_message})
+        active_chat["messages"].append({"role": "assistant", "content": bot_message})
 
 # -------------------------------
 # Logout
