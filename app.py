@@ -8,7 +8,7 @@ import os
 # -------------------------------
 # Configure Gemini AI
 # -------------------------------
-genai.configure(api_key="AIzaSyDO1ZV6ep36DlC6FYk_uMrigYuWzjNG9hM")
+genai.configure(api_key="AIzaSyChy_4shVmQO6VfWgEykID34Kn03gKI0CI")
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 # -------------------------------
@@ -45,12 +45,12 @@ if "active_chat" not in st.session_state:
     st.session_state.active_chat = 0  # index of current chat
 
 # -------------------------------
-# Page config + header
+# Page config
 # -------------------------------
 st.set_page_config(page_title="✨ R-Gen AI", page_icon="⚡", layout="wide")
 
 # -------------------------------
-# Left sidebar for chat sessions
+# Sidebar: Your Chats
 # -------------------------------
 with st.sidebar:
     st.markdown("<h2>Your Chats</h2>", unsafe_allow_html=True)
@@ -78,7 +78,7 @@ with c2:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------------
-# Signup/Login forms
+# Signup form
 # -------------------------------
 if st.session_state.show_signup:
     st.info("Create an account")
@@ -96,6 +96,9 @@ if st.session_state.show_signup:
             save_users()
             st.success("Account created — you can now log in.")
 
+# -------------------------------
+# Login form
+# -------------------------------
 if st.session_state.show_login:
     st.info("Log in to R-Gen AI")
     login_email = st.text_input("Email for login", key="login_email")
@@ -113,44 +116,50 @@ if st.session_state.show_login:
 # -------------------------------
 # Active chat display
 # -------------------------------
-if st.session_state.logged_in or not st.session_state.logged_in:
-    active_chat = st.session_state.chat_sessions[st.session_state.active_chat]
-    st.markdown(f"### {active_chat['name']}")
+active_chat = st.session_state.chat_sessions[st.session_state.active_chat]
+st.markdown(f"### {active_chat['name']}")
 
-    # show messages
-    for msg in active_chat["messages"]:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+# show messages
+for msg in active_chat["messages"]:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-    # chat input
-    if prompt := st.chat_input("Type your message..."):
-        active_chat["messages"].append({"role": "user", "content": prompt})
-        st.chat_message("user").markdown(prompt)
+# chat input
+if prompt := st.chat_input("Type your message..."):
+    active_chat["messages"].append({"role": "user", "content": prompt})
+    st.chat_message("user").markdown(prompt)
 
-        # animated 3-dot wave
-        placeholder = st.empty()
-        wave_frames = ["<span style='font-size:26px'>● ○ ○</span>",
-                       "<span style='font-size:26px'>○ ● ○</span>",
-                       "<span style='font-size:26px'>○ ○ ●</span>"]
-        for _ in range(8):
-            for frame in wave_frames:
-                placeholder.markdown(frame, unsafe_allow_html=True)
-                time.sleep(0.18)
+    # animated 3-dot wave
+    placeholder = st.empty()
+    wave_frames = ["<span style='font-size:26px'>● ○ ○</span>",
+                   "<span style='font-size:26px'>○ ● ○</span>",
+                   "<span style='font-size:26px'>○ ○ ●</span>"]
+    for _ in range(8):
+        for frame in wave_frames:
+            placeholder.markdown(frame, unsafe_allow_html=True)
+            time.sleep(0.18)
 
-        # AI response
-        conversation_text = (
-            "You are R-Gen AI, a helpful assistant. "
-            "Correct spelling/grammar if needed and answer clearly. "
-            "Do NOT repeat the user’s question.\n\n"
-            f"User: {prompt}"
-        )
-        try:
-            response = model.generate_content(conversation_text)
+    # AI response with error handling
+    conversation_text = (
+        "You are R-Gen AI, a helpful assistant. "
+        "Correct spelling/grammar if needed and answer clearly. "
+        "Do NOT repeat the user’s question.\n\n"
+        f"User: {prompt}"
+    )
+    try:
+        response = model.generate_content(conversation_text)
+        # safer access to AI response
+        if hasattr(response, "text"):
             bot_message = response.text
-        except Exception:
-            bot_message = "Sorry — an error happened while contacting the AI."
-        placeholder.markdown(bot_message)
-        active_chat["messages"].append({"role": "assistant", "content": bot_message})
+        elif hasattr(response, "candidates") and len(response.candidates) > 0:
+            bot_message = response.candidates[0].content
+        else:
+            bot_message = "AI did not return a response."
+    except Exception as e:
+        bot_message = f"Sorry — an error happened while contacting the AI.\nDetails: {e}"
+
+    placeholder.markdown(bot_message)
+    active_chat["messages"].append({"role": "assistant", "content": bot_message})
 
 # -------------------------------
 # Logout
