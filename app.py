@@ -167,7 +167,8 @@ if prompt := st.chat_input("Type your message..."):
 if st.session_state.logged_in:
     if st.button("Logout", key="logout_small"):
         st.session_state.logged_in = False
-        st.experimental_rerun()
+        st.rerun()
+
 
 
 
