@@ -8,7 +8,7 @@ import os
 # -------------------------------
 # Configure Gemini AI
 # -------------------------------
-genai.configure(api_key="AIzaSyDO1ZV6ep36DlC6FYk_uMrigYuWzjNG9hM")
+genai.configure(api_key="AIzaSyBLJdKP0Cnqd1n3zvjdCOE2U-uLAVsrCSU")
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 # -------------------------------
@@ -168,4 +168,5 @@ if st.session_state.logged_in:
     if st.button("Logout", key="logout_small"):
         st.session_state.logged_in = False
         st.experimental_rerun()
+
 
