@@ -8,7 +8,7 @@ import os
 # -------------------------------
 # Configure Gemini AI
 # -------------------------------
-genai.configure(api_key="AIzaSyBLJdKP0Cnqd1n3zvjdCOE2U-uLAVsrCSU")
+genai.configure(api_key="AIzaSyCWG1jqg7eMokXwp8H2g7IpkOtvHjHPHH8")
 model = genai.GenerativeModel("gemini-2.5-flash")
 
 # -------------------------------
